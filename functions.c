@@ -22,8 +22,11 @@ typedef struct dict Dict;
 
 float euclidean_distance(Point data[],int a, int b)
 {
-    float eu_dist;
-    float x, y, z, w;
+    float eu_dist = 0;
+    float x = 0;
+    float y = 0;
+    float z = 0;
+    float w = 0;
     x = pow((data[a].sep_l - data[b].sep_l),2);
     y = pow((data[a].sep_w - data[b].sep_w),2);
     z = pow((data[a].pet_l - data[b].pet_l),2);
@@ -34,8 +37,11 @@ float euclidean_distance(Point data[],int a, int b)
 }
 float euclidean_distance_(Point x, Point y)
 {
-    float eu_dist;
-    float a, b, z, w;
+    float eu_dist = 0;
+    float a = 0;
+    float b = 0;
+    float z = 0;
+    float w = 0;
     a = pow((x.sep_l - y.sep_l),2);
     b = pow((x.sep_w - y.sep_w),2);
     z = pow((x.pet_l - y.pet_l),2);
@@ -79,7 +85,7 @@ float * most_distant_k_point(Point dataset[],int rnd)
     int k_points[4];
 
 
-    for(int i = 0; i<= 149; i++)
+    for(int i = 0; i < 149; i++)
     {   dist = euclidean_distance(dataset,rnd,i);  
         if(euclidean_distance(dataset,i,rnd) >= tmp)
         {
@@ -90,71 +96,123 @@ float * most_distant_k_point(Point dataset[],int rnd)
     }
     return distances_values;
 }
-float * most_distant_k_point_(Point dataset[],Point mean)
+float * most_distant_k_point_(Point dataset[], Point mean, int array_len)
 {   
-    static float distances_values[149];
+    
+    static float distances_values_big[150];
+    static float distances_values_small[4];
     float tmp = 0;
     float dist = 0;
-    int k_points[3];
 
-
-    for(int i = 0; i<= 149; i++)
-    {   dist = euclidean_distance_(dataset[i],mean);  
-        if(dist >= tmp)
-        {
-            tmp = dist;
+    if (array_len == 150) 
+    {
+        for(int i = 0; i < 150; i++)
+        {   
+            dist = euclidean_distance_(dataset[i], mean);  
+            if(dist >= tmp)
+            {
+                tmp = dist;
+            }
+            distances_values_big[i] = dist;      
         }
-        distances_values[i] = dist;
-        
+
+        return distances_values_big;
+
+    } else {
+        for(int i = 0; i < 4; i++)
+        {
+            dist = euclidean_distance_(dataset[i], mean);  
+            if(dist >= tmp)
+            {
+                tmp = dist;
+            }
+            distances_values_small[i] = dist;        
+        }
+
+        return distances_values_small;
+
     }
-    return distances_values;
 }
-void change(Dict *dict[],int ind, int in, float value)
+
+
+
+void change(Dict *dict, int ind, int in, float new_value)
 {
-    dict[ind]->index = in;
-    dict[ind]->value = value;
+    dict->index = in;
+    dict->value = new_value;
 }
-int  max_in_array(float distances[], Dict dict[])
+
+int  max_in_array(float distances[], Dict dict[], int array_len)
 {   
     float max = 0;
-    float tmp;
-    int index ;
-    static int k_points[7];
-    int cc = 0;
+    float tmp = 0;
+    int index = 0;
+    //static int k_points[7];
+    //int cc = 0;
     
-    
-    for(int i = 0;i<150;i++)
-    {   
-            
-        tmp = distances[i];
-        if(tmp >= max)
-        {
-            max = tmp;
-            printf("max: %f",max);
-            if(cc <= 10)
-            {
-            //k_points[cc] = i;
-                dict[cc].value = max;
-                dict[cc].index = i;
-                //change(&dict,cc,i,max);
-
-                cc++;
+    if (array_len == 150) 
+    {
+        for(int i = 0; i < 150; i++)
+        {   
                 
+            tmp = distances[i];
+            if(tmp >= max)
+            {
+                //printf("\n PRIMA: %f", max);
+                max = tmp;
+                //printf("\n DOPO: %f", max);
+
+
+                printf("max (150): %f",max);
+                if(i < 8)
+                {
+                //k_points[cc] = i;
+                    //dict[i].value = max;
+                    //dict[i].index = i;
+                    change(&dict[i], i, i, max);               
+                }
+            //index = i;
             }
-            
-               
-          //index = i;
-               
         }
-    }return 1;
-        
-    
-    //return dict;
+
+    } else {
+        for(int i = 0; i < 4; i++)
+        {   
+            //printf("\n PRIMA: %f", distances[i]);
+            tmp = tmp + distances[i];
+            //printf("\n DOPO: %f", tmp);
+
+            if(tmp >= max)
+            {
+                //printf("\n PRIMA: %f", max);
+                max = tmp;
+                //printf("\n DOPO: %f", max);
+
+                printf("max (4): %f",max);
+                if(i < 4)
+                {
+                //k_points[cc] = i;
+                    //dict[i].value = max;
+                    //dict[i].index = i;
+                    //printf("\n PRECEDENTE CHANGE: %d, %f", dict[i].index, dict[i].value);
+                    change(&dict[i], i, i, max);
+                    //printf("\n DOPO IL CHANGE: %d, %f", dict[i].index, dict[i].value);          
+                }          
+            //index = i;                
+            }
+        }
+    }
+    return 1;
 }    
+
 Point compute_mean_point(Point dataset[])
-{   Point x;
-    float a, b, c, d;
-    for(int i = 0; i<= 149;i++)
+{
+    Point x;
+    float a = 0;
+    float b = 0;
+    float c = 0;
+    float d = 0;
+    for(int i = 0; i < 150; i++)
     {
         a = a+dataset[i].sep_l;
         b = b+dataset[i].sep_w;
@@ -171,6 +229,7 @@ Point compute_mean_point(Point dataset[])
     x.pet_w = d;
     return x;
 }
+
 int compute_k_initial_point(Point data[],Point p[])
 {
     Dict dict[8];
@@ -178,31 +237,38 @@ int compute_k_initial_point(Point data[],Point p[])
     float *distances;
     int n_points = 7;
     int c = 0;
-    float f ,f_1 = 0;
+    float f = 0;
+    float f_1 = 0;
     Point refined_data[7];
     mean = compute_mean_point(data);                    //computing the mean point of the dataset
     printf("\nthe mean virtual point is:\n ");
-    print_data(&mean,0);
-    distances = most_distant_k_point_(data,mean);
-    max_in_array(distances, dict);
-    for(int i = 0; i < n_points;i++)
+    print_data(&mean, 0);
+    distances = most_distant_k_point_(data, mean, 150);
+    max_in_array(distances, dict, 150);
+    
+    for(int i = 0; i < n_points; i++)
     {
+        printf("\nPRIMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
+        print_data(refined_data,i);
         assign(&refined_data[i],data[dict[n_points-i].index]);
+        printf("\nDOPOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\n");
+        print_data(refined_data,i);
     }
 
-    for(int i = 0; i<4;i++)
+    for(int i = 0; i < 4; i++)
     {
 
         printf("\nPORCO DIO %d \n",i);
-        distances = most_distant_k_point_(refined_data,refined_data[0]);
-        max_in_array(distances, dict);
+        distances = most_distant_k_point_(refined_data,refined_data[0], 4);
+        max_in_array(distances, dict, 4);
         printf("\npd:%d ",dict[n_points].index);
-        assign(&p[i],data[dict[n_points].index]);
-        print_data(p, i);
-        for(int j = 0; j <= n_points;j++)
+        assign(&p[i],data[dict[i].index]);
+        //print_data(p, i);
+        for(int j = 0; j < n_points; j++)
         {
             assign(&refined_data[i],data[dict[n_points-j].index]);
         }
+        //print_data(refined_data, i);
         // if(i > 1)
         // {   printf("\nciaoo\n");
         //     f = euclidean_distance_(p[i-1],refined_data[0]);
