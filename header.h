@@ -4,7 +4,7 @@ float euclidean_distance(Point data[], int a, int b);  //euclidean distance for 
 float euclidean_distance_(Point data[],Point mean);
 float * most_distant_k_point(Point dataset[],int rnd);
 float * most_distant_k_point_(Point dataset[],Point mean, int array_len);
-void change(Dict *dict, int ind, int in, float new_value);
+void change(Dict *dict, int in, float new_value);
 
 int Get_rand_element();
 void assign(Point *a, Point b);
