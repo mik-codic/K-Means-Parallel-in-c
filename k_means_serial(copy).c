@@ -1,3 +1,5 @@
+//CIAOOOOOOOOOOOOOO
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -35,7 +37,7 @@ float d = 0;
 for(int i = 0; i < 4; i++)
 {
     
-    for(int j = i; j<4; j++)
+    for(int j = i; j < 4; j++)
     {
         d = euclidean_distance_(p[i],p[j]);
         printf("\ndistanza tra %d e %d: %f",i,j,d);
