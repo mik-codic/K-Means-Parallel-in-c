@@ -100,7 +100,11 @@ float * most_distant_k_point_(Point dataset[], Point mean, int array_len)
 {   
     
     static float distances_values_big[150];
-    static float distances_values_small[4];
+    static float distances_values_small[7];
+
+    float * distance_big = (float *) malloc(sizeof(float)*150);
+    float * distance_small = (float *) malloc(sizeof(float)*7);
+
     float tmp = 0;
     float dist = 0;
 
@@ -113,10 +117,10 @@ float * most_distant_k_point_(Point dataset[], Point mean, int array_len)
             {
                 tmp = dist;
             }
-            distances_values_big[i] = dist;      
+            distance_big[i] = dist;      
         }
 
-        return distances_values_big;
+        return distance_big;
 
     } else {
         for(int i = 0; i < 7; i++)
@@ -126,12 +130,14 @@ float * most_distant_k_point_(Point dataset[], Point mean, int array_len)
             {
                 tmp = dist;
             }
-            distances_values_small[i] = dist;        
+            distance_small[i] = dist;        
         }
 
-        return distances_values_small;
+        return distance_small;
 
     }
+    free(distance_big);
+    free(distance_small);
 }
 
 
@@ -176,7 +182,7 @@ int  max_in_array(float distances[], Dict dict[], int array_len)
             tmp = distances[i];
             //printf("\n DOPO: %f", tmp);
 
-            if(tmp >= max)
+            if(tmp > max)
             {
                 //printf("\n PRIMA: %f", max);
                 max = tmp;
@@ -191,35 +197,88 @@ int  max_in_array(float distances[], Dict dict[], int array_len)
                     //printf("\n DOPO IL CHANGE: %d, %f", dict[i].index, dict[i].value);          
                 }          
             //index = i;                
+            } else {
+                if (tmp > dict[cc-1].value) {
+                    if(cc < 4)
+                    {
+                        change(&dict[cc], i, tmp);
+                        cc++;
+                    }      
+                }
+                if (tmp > dict[cc-2].value) {
+                    if(cc < 4)
+                    {
+                        change(&dict[cc], i, tmp);
+                        cc++;
+                    }    
+                }
+                if (tmp > dict[cc-3].value) {
+                    if(cc < 4)
+                    {
+                        change(&dict[cc], i, tmp);
+                        cc++;
+                    }    
+                }
+                if (tmp > dict[cc-1].value) {
+                    if(cc < 4)
+                    {
+                        change(&dict[cc], i, tmp);
+                        cc++;
+                    }    
+                }
+
             }
         }
     }
     return 1;
 }    
 
-Point compute_mean_point(Point dataset[])
+Point compute_mean_point(Point dataset[], int array_len)
 {
     Point x;
     float a = 0;
     float b = 0;
     float c = 0;
     float d = 0;
-    for(int i = 0; i < 150; i++)
-    {
-        a = a+dataset[i].sep_l;
-        b = b+dataset[i].sep_w;
-        c = c+dataset[i].pet_l;
-        d = d+dataset[i].pet_w;
+    if (array_len == 150) {
+        for(int i = 0; i < array_len; i++)
+            {
+                a = a+dataset[i].sep_l;
+                b = b+dataset[i].sep_w;
+                c = c+dataset[i].pet_l;
+                d = d+dataset[i].pet_w;
+            }
+        a = a/(array_len-1);
+        b = b/(array_len-1);
+        c = c/(array_len-1);
+        d = d/(array_len-1);
+        x.sep_l = a;
+        x.sep_w = b;
+        x.pet_l = c;
+        x.pet_w = d;
+
+        return x;
+    } else {
+        for(int i = 0; i < array_len; i++)
+            {
+                a = a+dataset[i].sep_l;
+                b = b+dataset[i].sep_w;
+                c = c+dataset[i].pet_l;
+                d = d+dataset[i].pet_w;
+            }
+        a = a/(array_len-1);
+        b = b/(array_len-1);
+        c = c/(array_len-1);
+        d = d/(array_len-1);
+        x.sep_l = a;
+        x.sep_w = b;
+        x.pet_l = c;
+        x.pet_w = d;
+
+        return x;
     }
-    a = a/149;
-    b = b/149;
-    c = c/149;
-    d = d/149;
-    x.sep_l = a;
-    x.sep_w = b;
-    x.pet_l = c;
-    x.pet_w = d;
-    return x;
+    
+    
 }
 
 int compute_k_initial_point(Point data[],Point p[])
@@ -230,12 +289,12 @@ int compute_k_initial_point(Point data[],Point p[])
     float *distances1;
     float *distances2;
     int top_seven = 7;
-    int top_four;
+    int top_four = 4;
     int c = 0;
     float f = 0;
     float f_1 = 0;
     Point refined_data[7];
-    mean = compute_mean_point(data);                    //computing the mean point of the dataset
+    mean = compute_mean_point(data, 150);                    //computing the mean point of the dataset
     printf("\nthe mean virtual point is:\n ");
     print_data(&mean, 0);
     distances1 = most_distant_k_point_(data, mean, 150);
@@ -253,21 +312,37 @@ int compute_k_initial_point(Point data[],Point p[])
         //REFINED_DATA ORDINE DECRESCENTE
     }
 
+    Point ciao = compute_mean_point(refined_data, 7);
+    distances2 = most_distant_k_point_(refined_data, ciao, 7);
     
+    printf("\nCIAOOOOOOOOOOOO\n");
+    //print_data(&ciao, 0);
+    max_in_array(distances2, top_dict, 7);
+
+    for (int l = 0; l<4; l++) {
+        printf("\n %d, %f \n",top_dict[l].index, top_dict[l].value);
+        //printf("\n%f", distances2[l]);
+    }
 
     for(int i = 0; i < top_four; i++)
     {
         //printf("\nPORCO DIO %d \n",i);
-        distances2 = most_distant_k_point_(refined_data,refined_data[0], 7);
-        max_in_array(distances2, top_dict, 7);
+        
+        
+        //printf("\nDISTANCES 2:\n");
+        for (int l = 0; l<7; l++) {
+            //printf("\n%f", distances2[l]);
+            //print_data(refined_data, l);
+        }
+       
         
         //printf("\npd:%d ",dict[n_points].index);
-        assign(&p[i],data[top_dict[top_four-i].index]);
+        assign(&p[i],data[top_dict[i].index]);
         //print_data(p, i);
-        for(int j = 0; j < top_seven; j++)
-        {
-            assign(&refined_data[i],data[dict[top_seven-j].index]);
-        }
+        // for(int j = 0; j < top_seven; j++)
+        // {
+        //     assign(&refined_data[i],data[dict[top_seven-j].index]);
+        // }
         //print_data(refined_data, i);
         // if(i > 1)
         // {   printf("\nciaoo\n");

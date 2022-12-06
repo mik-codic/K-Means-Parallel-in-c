@@ -9,7 +9,7 @@ void change(Dict *dict, int in, float new_value);
 int Get_rand_element();
 void assign(Point *a, Point b);
 int max_in_array(float distances[],Dict dict[], int array_len);
-Point compute_mean_point(Point dataset[]); 
+Point compute_mean_point(Point dataset[], int array_len); 
 int compute_k_initial_point(Point data[], Point p[]);
 
 

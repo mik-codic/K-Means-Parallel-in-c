@@ -5,6 +5,7 @@
 #include <math.h>
 #include <time.h>
 #include "functions.c"
+#include <malloc.h>
 
 
 int main(){
