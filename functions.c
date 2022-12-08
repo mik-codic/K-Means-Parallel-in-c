@@ -32,7 +32,7 @@ float euclidean_distance(Point data[],int a, int b)
     z = pow((data[a].pet_l - data[b].pet_l),2);
     w = pow((data[a].pet_w - data[b].pet_w),2);
 
-    eu_dist = sqrt(x+y+z+w);
+    eu_dist = (x+y+z+w);
     return eu_dist;
 }
 float euclidean_distance_(Point x, Point y)
@@ -47,7 +47,7 @@ float euclidean_distance_(Point x, Point y)
     z = pow((x.pet_l - y.pet_l),2);
     w = pow((x.pet_w - y.pet_w),2);
 
-    eu_dist = a+b+z+w;
+    eu_dist = (a+b+z+w);
     return eu_dist;
 }
 
@@ -148,6 +148,12 @@ void change(Dict *dict, int in, float new_value)
     dict->value = new_value;
 }
 
+void get_index (Dict *dict, int new_index, float new_value) {
+    if (dict->value == new_value) {
+        dict->index = new_index;
+    }    
+}
+
 int  max_in_array(float distances[], Dict dict[], int array_len)
 {   
     float max = 0;
@@ -198,35 +204,31 @@ int  max_in_array(float distances[], Dict dict[], int array_len)
                 }          
             //index = i;                
             } else {
-                if (tmp > dict[cc-1].value) {
-                    if(cc < 4)
+                if (tmp > dict[cc-1].value && cc > 0) {
+                    if(cc < 7)
                     {
-                        change(&dict[cc], i, tmp);
+                        change(&dict[cc-1], i, tmp);
                         cc++;
                     }      
-                }
-                if (tmp > dict[cc-2].value) {
-                    if(cc < 4)
+                } else if (tmp > dict[cc-2].value && cc > 1) {
+                    if(cc < 7)
                     {
-                        change(&dict[cc], i, tmp);
+                        change(&dict[cc-2], i, tmp);
+                        cc++;
+                    }    
+                } else if (tmp > dict[cc-3].value && cc > 2) {
+                    if(cc < 7)
+                    {
+                        change(&dict[cc-3], i, tmp);
+                        cc++;
+                    }    
+                } else if (tmp > dict[cc-4].value && cc > 3) {
+                    if(cc < 7)
+                    {
+                        change(&dict[cc-4], i, tmp);
                         cc++;
                     }    
                 }
-                if (tmp > dict[cc-3].value) {
-                    if(cc < 4)
-                    {
-                        change(&dict[cc], i, tmp);
-                        cc++;
-                    }    
-                }
-                if (tmp > dict[cc-1].value) {
-                    if(cc < 4)
-                    {
-                        change(&dict[cc], i, tmp);
-                        cc++;
-                    }    
-                }
-
             }
         }
     }
@@ -285,6 +287,7 @@ int compute_k_initial_point(Point data[],Point p[])
 {
     Dict dict[8];
     Dict top_dict[4];
+    Dict new[7];
     Point mean;
     float *distances1;
     float *distances2;
@@ -299,29 +302,42 @@ int compute_k_initial_point(Point data[],Point p[])
     print_data(&mean, 0);
     distances1 = most_distant_k_point_(data, mean, 150);
     max_in_array(distances1, dict, 150);
-    
+
     for(int i = 0; i < top_seven; i++)
     {
         //printf("\nPRIMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
         //print_data(refined_data,i);
         //printf("\nCIAOOOOOOOO %d, in posizione %d in DICT \n", dict[n_points-i].index, (n_points-i));
-        assign(&refined_data[i],data[dict[top_seven-i].index]);
+        assign(&refined_data[i],data[dict[top_seven - i].index]);
         //printf("\nREDEFINED_DATA\n");
         //print_data(refined_data,i);
 
         //REFINED_DATA ORDINE DECRESCENTE
     }
 
+    for (int i = 0; i<7; i++) {
+        printf("DIO CANEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
+        print_data(refined_data,i);
+    }
+
     Point ciao = compute_mean_point(refined_data, 7);
     distances2 = most_distant_k_point_(refined_data, ciao, 7);
-    
+    for (int j = 0; j<7; j++) {
+        change(&new[j], dict[top_seven-j].index, distances2[j]);
+    }
     printf("\nCIAOOOOOOOOOOOO\n");
-    //print_data(&ciao, 0);
+    print_data(&ciao, 0);
     max_in_array(distances2, top_dict, 7);
+
+
+    for(int i = 0; i<7; i++) {
+        for (int j = 0; j<4; j++) {
+            get_index(&top_dict[j], new[i].index, new[i].value);
+        }
+    }
 
     for (int l = 0; l<4; l++) {
         printf("\n %d, %f \n",top_dict[l].index, top_dict[l].value);
-        //printf("\n%f", distances2[l]);
     }
 
     for(int i = 0; i < top_four; i++)
