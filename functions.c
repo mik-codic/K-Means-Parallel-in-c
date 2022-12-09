@@ -53,11 +53,6 @@ float euclidean_distance_(Point x, Point y)
 
 void print_data(Point data[], int c)
 {
-    // int till = (int) sizeof(data)/sizeof(data[0]);
-    // printf("this is till :%d",till);
-    // for(int i = 0; i < c; i++){
-    //     printf("\n data point %d \n sep_l: %f \n sep_w: %f", i, data[i].sep_l,data[i].sep_w);
-    // }
     int i = c;
     printf("\n data point %d \n sep_l: %f \n sep_w: %f\n pet_l: %f \n pet_w: %f\n", i, data[i].sep_l, data[i].sep_w, data[i].pet_l, data[i].pet_w);
 
@@ -154,25 +149,116 @@ void get_index (Dict *dict, int new_index, float new_value) {
     }    
 }
 
+int return_index_dict (Dict dict[], float new_value)
+{
+    for (int i = 0; i < 7; i++)
+    {
+        if (dict[i].value == new_value)
+        {
+            return(dict[i].index);
+        }
+    }
+}
+
+
+int return_position_dict (Dict dict[], int new_index)
+{
+    for (int i = 0; i < 7; i++)
+    {
+        if (dict[i].index == new_index)
+        {
+            return(i);
+        }
+    }
+}
+
+float sort_array (Dict dict[], int array_len, int position) {
+
+    static float indici[7];
+    float tmp_value = 0;
+    float max = 0;
+    int counter = 0;
+    float pos = 0;
+
+    for (int l = 0; l < 7; l++)
+    {
+        indici[l] = dict[l].value;
+    }
+    
+
+    for (int i = 0; i < 7-1; i++)
+    {
+        counter = i;
+
+        for (int j = i+1; j < 7; j++)
+        {
+            if (indici[j] < indici[counter]) {
+                counter = j;
+            }
+        }
+
+        tmp_value = indici[i];
+        indici[i] = indici[counter];
+        indici[counter] = tmp_value;        
+    }
+
+    pos = indici[position];
+
+    return pos;
+}
+
+int * get_initial_cluster(Dict dict1[], Dict dict2[], Point points[])
+{
+    float * distances;
+    int top_seven = 7;
+    int counter = 0;
+    static int top_index[4];
+    float max_value = 0;
+    int index = 0;
+
+    top_index[0] = 118;
+
+    for (int i = 1; i < 4; i++)
+    {
+        Point initial_point = points[counter];
+        distances = most_distant_k_point_(points, initial_point, 7);
+        for (int j = 0; j<7; j++) {
+            change(&dict1[j], dict2[top_seven-j].index, distances[j]);
+        }
+        
+        max_value = sort_array(dict1, 7, 6);
+        index = return_index_dict(dict1, max_value);
+
+        for (int l = 0; l < 4; l++)
+        {
+            if(index == top_index[l]) {
+                max_value = sort_array(dict1, 7, 5);
+                index = return_index_dict(dict1, max_value);
+            }
+        }
+
+        top_index[i] = index;
+        counter = return_position_dict(dict1, index);
+    }
+
+    return top_index;
+}
+
 int  max_in_array(float distances[], Dict dict[], int array_len)
 {   
     float max = 0;
     float tmp = 0;
     int cc = 0;
     
-    if (array_len == 150) 
+    if (array_len == array_len) 
     {
-        for(int i = 0; i < 150; i++)
+        for(int i = 0; i < array_len; i++)
         {   
                 
             tmp = distances[i];
             if(tmp >= max)
             {
-                //printf("\n PRIMA: %f", max);
-                max = tmp;
-                //printf("\n DOPO: %f", max);
-
-                printf("\nmax (top 7): %f",max);
+                max = tmp;                
                 if(cc < 8)
                 {
                     change(&dict[cc], i, max);
@@ -180,60 +266,9 @@ int  max_in_array(float distances[], Dict dict[], int array_len)
                 }
             }
         }
-
-    } else {
-        for(int i = 0; i < 7; i++)
-        {   
-            //printf("\n PRIMA: %f", distances[i]);
-            tmp = distances[i];
-            //printf("\n DOPO: %f", tmp);
-
-            if(tmp > max)
-            {
-                //printf("\n PRIMA: %f", max);
-                max = tmp;
-                //printf("\n DOPO: %f", max);
-
-                printf("\nmax (top 4): %f",max);
-                if(cc < 4)
-                {
-                    //printf("\n PRECEDENTE CHANGE: %d, %f", dict[i].index, dict[i].value);
-                    change(&dict[cc], i, max);
-                    cc++;
-                    //printf("\n DOPO IL CHANGE: %d, %f", dict[i].index, dict[i].value);          
-                }          
-            //index = i;                
-            } else {
-                if (tmp > dict[cc-1].value && cc > 0) {
-                    if(cc < 7)
-                    {
-                        change(&dict[cc-1], i, tmp);
-                        cc++;
-                    }      
-                } else if (tmp > dict[cc-2].value && cc > 1) {
-                    if(cc < 7)
-                    {
-                        change(&dict[cc-2], i, tmp);
-                        cc++;
-                    }    
-                } else if (tmp > dict[cc-3].value && cc > 2) {
-                    if(cc < 7)
-                    {
-                        change(&dict[cc-3], i, tmp);
-                        cc++;
-                    }    
-                } else if (tmp > dict[cc-4].value && cc > 3) {
-                    if(cc < 7)
-                    {
-                        change(&dict[cc-4], i, tmp);
-                        cc++;
-                    }    
-                }
-            }
-        }
     }
     return 1;
-}    
+}
 
 Point compute_mean_point(Point dataset[], int array_len)
 {
@@ -242,7 +277,7 @@ Point compute_mean_point(Point dataset[], int array_len)
     float b = 0;
     float c = 0;
     float d = 0;
-    if (array_len == 150) {
+    if (array_len == array_len) {
         for(int i = 0; i < array_len; i++)
             {
                 a = a+dataset[i].sep_l;
@@ -286,94 +321,45 @@ Point compute_mean_point(Point dataset[], int array_len)
 int compute_k_initial_point(Point data[],Point p[])
 {
     Dict dict[8];
-    Dict top_dict[4];
-    Dict new[7];
+    Dict top_dict[7];
+
     Point mean;
-    float *distances1;
-    float *distances2;
+    float *distances;
+    
     int top_seven = 7;
     int top_four = 4;
-    int c = 0;
-    float f = 0;
-    float f_1 = 0;
+
     Point refined_data[7];
-    mean = compute_mean_point(data, 150);                    //computing the mean point of the dataset
+
+    mean = compute_mean_point(data, 150);                   //computing the mean point of the dataset
+
     printf("\nthe mean virtual point is:\n ");
     print_data(&mean, 0);
-    distances1 = most_distant_k_point_(data, mean, 150);
-    max_in_array(distances1, dict, 150);
+
+    distances = most_distant_k_point_(data, mean, 150);
+    max_in_array(distances, dict, 150);
 
     for(int i = 0; i < top_seven; i++)
     {
-        //printf("\nPRIMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
-        //print_data(refined_data,i);
-        //printf("\nCIAOOOOOOOO %d, in posizione %d in DICT \n", dict[n_points-i].index, (n_points-i));
-        assign(&refined_data[i],data[dict[top_seven - i].index]);
-        //printf("\nREDEFINED_DATA\n");
-        //print_data(refined_data,i);
-
-        //REFINED_DATA ORDINE DECRESCENTE
+        assign(&refined_data[i],data[dict[top_seven - i].index]);        
     }
 
-    for (int i = 0; i<7; i++) {
-        printf("DIO CANEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
-        print_data(refined_data,i);
+    int * top_final;
+    top_final = get_initial_cluster(top_dict, dict, refined_data);
+
+    
+    // PRINT INDEX OF TOP 4 POINTS
+    printf("\n TOP 4 INDEX POINTS: \n");
+    for (int i = 0; i < top_four; i++)
+    {
+        printf("\n%d \n", top_final[i]);
     }
 
-    Point ciao = compute_mean_point(refined_data, 7);
-    distances2 = most_distant_k_point_(refined_data, ciao, 7);
-    for (int j = 0; j<7; j++) {
-        change(&new[j], dict[top_seven-j].index, distances2[j]);
-    }
-    printf("\nCIAOOOOOOOOOOOO\n");
-    print_data(&ciao, 0);
-    max_in_array(distances2, top_dict, 7);
-
-
-    for(int i = 0; i<7; i++) {
-        for (int j = 0; j<4; j++) {
-            get_index(&top_dict[j], new[i].index, new[i].value);
-        }
-    }
-
-    for (int l = 0; l<4; l++) {
-        printf("\n %d, %f \n",top_dict[l].index, top_dict[l].value);
-    }
-
+    
     for(int i = 0; i < top_four; i++)
     {
-        //printf("\nPORCO DIO %d \n",i);
-        
-        
-        //printf("\nDISTANCES 2:\n");
-        for (int l = 0; l<7; l++) {
-            //printf("\n%f", distances2[l]);
-            //print_data(refined_data, l);
-        }
-       
-        
-        //printf("\npd:%d ",dict[n_points].index);
-        assign(&p[i],data[top_dict[i].index]);
-        //print_data(p, i);
-        // for(int j = 0; j < top_seven; j++)
-        // {
-        //     assign(&refined_data[i],data[dict[top_seven-j].index]);
-        // }
-        //print_data(refined_data, i);
-        // if(i > 1)
-        // {   printf("\nciaoo\n");
-        //     f = euclidean_distance_(p[i-1],refined_data[0]);
-        //     f_1 = euclidean_distance_(p[i],refined_data[0]);
-        //     if(f < f_1)
-        //     {
-        //         assign(&p[i], refined_data[c+1]);
-        //         printf("\nporco dio");
-                
-        //     }
-
-        // } 
+        assign(&p[i],data[top_final[i]]);       
     }
-    //int *kk;
     return 1;
 }
 

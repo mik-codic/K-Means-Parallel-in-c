@@ -24,8 +24,6 @@ fp = fopen("iris.csv", "r");
     fscanf(fp, "%f,%f,%f,%f,%s", &data[i].sep_l,&data[i].sep_w,&data[i].pet_l,&data[i].pet_w, data[i].label);
     i++;
 }
-//Visualizing an example of dataset
-printf("\n %f, %f, %f,%f,%s",data[149].sep_l, data[149].sep_w,data[149].pet_l,data[149].pet_w, data[149].label);
 
 Point p[4];
 compute_k_initial_point(data, p);
