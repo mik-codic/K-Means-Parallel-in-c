@@ -76,7 +76,7 @@ void assign(Point *a, Point b)
 float * most_distant_k_point(Point dataset[], Point mean, int array_len)
 {   
 
-    float * distances_values_big = (float *) malloc(sizeof(float)*150);
+    float * distances_values_big = (float *) malloc(sizeof(float)*array_len);
     float * distances_values_small = (float *) malloc(sizeof(float)*7);
 
     float tmp = 0;
@@ -129,30 +129,45 @@ void get_index (Dict *dict, int new_index, float new_value) {
     }    
 }
 
-int return_index_dict (Dict dict[], float new_value)
+int return_index_dict (Dict *dict, float new_value, int array_len)
 {
-    for (int i = 0; i < 7; i++)
+    //if (array_len > 100) {
+    for (int i = 0; i < array_len; i++)
     {
         if (dict[i].value == new_value)
         {
             return(dict[i].index);
         }
     }
+    // } else {
+    //     for (int i = 0; i < array_len; i++)
+    //     {
+    //         if (dict[i].value == new_value)
+    //         {
+    //             return(dict[i].index);
+    //         }
+    //     }
+    // }    
 }
 
 
-int return_position_dict (Dict dict[], int new_index)
+int return_position_dict (Dict dict[], int new_index, int array_len)
 {
-    for (int i = 0; i < 7; i++)
+    //if (array_len > 100) {
+    for (int i = 0; i < array_len; i++)
     {
         if (dict[i].index == new_index)
         {
             return(i);
         }
     }
+    // } else {
+        
+    // }
 }
 
-float sort_array (Dict dict[], int array_len, int position) {
+
+float sort_array_with_dict (Dict dict[], int array_len, int position, char* type_of_sort) {
 
     float *indici;
 
@@ -168,7 +183,6 @@ float sort_array (Dict dict[], int array_len, int position) {
     {
         indici[l] = dict[l].value;
     }
-    
 
     for (int i = 0; i < array_len-1; i++)
     {
@@ -176,8 +190,14 @@ float sort_array (Dict dict[], int array_len, int position) {
 
         for (int j = i+1; j < array_len; j++)
         {
-            if (indici[j] < indici[counter]) {
-                counter = j;
+            if (type_of_sort == "MAX") {
+                if (indici[j] < indici[counter]) {
+                    counter = j;
+                }
+            } else if (type_of_sort == "MIN") {
+                if (indici[j] > indici[counter]) {
+                    counter = j;
+                }
             }
         }
 
@@ -213,7 +233,7 @@ int * get_initial_cluster(Dict dict1[], Dict dict2[], Point points[], int value_
         change(&dict1[j], dict2[top_seven-j].index, distances[j]);
     }
     //values in distances are calculated wrt the first point (the farthest) and so the value in distance for it is 0.0 (the distance with itself)   
-    top_index[0] = return_index_dict(dict1, 0.0);
+    top_index[0] = return_index_dict(dict1, 0.0, top_seven);
 
 
     for (int i = 1; i < value_k; i++)
@@ -224,27 +244,27 @@ int * get_initial_cluster(Dict dict1[], Dict dict2[], Point points[], int value_
             change(&dict1[j], dict2[top_seven-j].index, distances[j]);
         }
         
-        max_value = sort_array(dict1, 7, 6);
-        index = return_index_dict(dict1, max_value);
+        max_value = sort_array_with_dict(dict1, 7, 6, "MAX");
+        index = return_index_dict(dict1, max_value, top_seven);
 
         for (int l = 0; l < value_k; l++)
         {
             if(index == top_index[l]) {
-                max_value = sort_array(dict1, 7, 5);
-                index = return_index_dict(dict1, max_value);
+                max_value = sort_array_with_dict(dict1, 7, 5, "MAX"); //if the max distance is for a Point already in the list, get max -1 (position 5)
+                index = return_index_dict(dict1, max_value, top_seven);
                 if (index == top_index[l]) {
-                    max_value = sort_array(dict1, 7, 4);
-                    index = return_index_dict(dict1, max_value);
+                    max_value = sort_array_with_dict(dict1, 7, 4, "MAX"); //if the max distance is for a Point already in the list, get max -2 (position 4)
+                    index = return_index_dict(dict1, max_value, top_seven);
                     if (index == top_index[l]) {
-                        max_value = sort_array(dict1, 7, 3);
-                        index = return_index_dict(dict1, max_value);
+                        max_value = sort_array_with_dict(dict1, 7, 3, "MAX"); //if the max distance is for a Point already in the list, get max -3 (position 3)
+                        index = return_index_dict(dict1, max_value, top_seven);
                 }
                 }
             }
         }
 
         top_index[i] = index;
-        counter = return_position_dict(dict1, index);
+        counter = return_position_dict(dict1, index, top_seven);
     }
 
     return top_index;
@@ -303,7 +323,7 @@ Point compute_mean_point(Point dataset[], int array_len)
        
 }
 
-int compute_k_initial_point(Point data[], int num_of_data, Point p[], int value_k)
+int * compute_k_initial_point(Point data[], int num_of_data, Point p[], int value_k)
 {
     
     Dict *dict;  //n = 8
@@ -351,13 +371,56 @@ int compute_k_initial_point(Point data[], int num_of_data, Point p[], int value_
     {
         assign(&p[i],data[top_final[i]]);       
     }
-    return 1;
+    return top_final;
 
 
     free(dict);
     free(top_dict);
     free(refined_data);
 }
+
+void add_to_cluster(int matrix_cluster[], int cluster, int index_to_add, int number_of_index_in_matrix){
+    
+    *(matrix_cluster+ number_of_index_in_matrix*cluster) = index_to_add;    
+}
+
+void populate_cluster(Point data[], int num_data, int initial_points_indexes[], int k_value, int cluster_matrix []) {
+
+    Dict *dict;
+    //start from the first (initial_points_indexes[0])
+    float * distances;
+    float min_value;
+
+    int counter = 0;
+
+    int index;
+
+    distances = (float*) malloc(num_data*sizeof(float));
+
+    dict = (Dict*) malloc (num_data*sizeof(Dict));
+
+    for (int i = 0; i < num_data; i++)
+    {
+        distances[i] = euclidean_distance(data, initial_points_indexes[0], i);
+        change(&dict[i], i, distances[i]);
+    }
+
+    min_value = sort_array_with_dict(dict, num_data, num_data-2, "MIN");
+    index = return_index_dict(dict, min_value, num_data);
+
+    add_to_cluster(cluster_matrix, 0, index, counter++);
+
+    
+    
+    // for (int i = 0; i<num_data; i++) {
+    //     printf("\n%d, %f\n", dict[i].index, dict[i].value);
+    // }
+
+
+    
+}
+
+
 
 
 #endif
