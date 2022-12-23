@@ -7,9 +7,16 @@
 #include "functions.c"
 
 
+
 int main(){
 FILE *fp;
-Point data[150];
+
+int number_of_data = 150;
+int value_of_k = 4;
+
+Point *data;
+Point *p;
+data = (Point*) malloc(number_of_data*sizeof(Point));
 
 int i = 0;
 fp = fopen("iris.csv", "r");
@@ -17,135 +24,99 @@ fp = fopen("iris.csv", "r");
         fprintf(stderr, "Error reading file\n");
         return 1;
     }
-    while (i < 150)
+    while (i < number_of_data)
 {
     float number;
     fscanf(fp, "%f,%f,%f,%f,%s", &data[i].sep_l,&data[i].sep_w,&data[i].pet_l,&data[i].pet_w, data[i].label);
     i++;
 }
-//Visualizing an example of dataset
-printf("\n %f, %f, %f,%f,%s",data[149].sep_l, data[149].sep_w,data[149].pet_l,data[149].pet_w, data[149].label);
 
-Point p[4];
-compute_k_initial_point(data, p);
-for(int i = 0; i < 4 ; i++)
-{
-    print_data(p,i);
-}
-float c = 0;
-float d = 0;
-for(int i = 0; i < 4; i++)
-{
+//printf("ENTER THE NUMBER OF POINTS (value of k [0<k<7]): ");
+//scanf("%d", &value_of_k);
+
+
+p = (Point*) malloc(value_of_k*sizeof(Point));
+
+int * final_indexes;
+final_indexes = compute_k_initial_point(data, number_of_data, p, value_of_k);
+
+
+// for(int i = 0; i < value_of_k ; i++)
+// {
+//     print_data(p,i);
+// }
+// float d = 0;
+// for(int i = 0; i < value_of_k; i++)
+// {
     
-    for(int j = i; j < 4; j++)
-    {
-        d = euclidean_distance_(p[i],p[j]);
-        printf("\ndistanza tra %d e %d: %f",i,j,d);
-    }
-}
+//     for(int j = i; j < value_of_k; j++)
+//     {
+//         d = euclidean_distance_(p[i],p[j]);
+//         printf("\ndistanza tra %d e %d: %f", i, j, d);
+//     }
+// }
+
+//matrix: on the column we have the k cluster and on the rows all the indexes of the points in those cluster
+//rows: indexes of points
+//columns: clusters
+int *cluster_matrix = (int*) malloc(number_of_data*value_of_k*sizeof(int)); 
+
+populate_cluster(data, number_of_data, final_indexes, value_of_k, cluster_matrix);
 
 
-printf("\n%f", c);
-    
 
-// Point mean;
-// float *distances;
-// float *distances_second;
 
-// Dict dict[8];
-// Dict second_dict[8];
+// 
 
-// int n_points = 7;
-// Point refined_data[n_points];
-// mean = compute_mean_point(data);                    //computing the mean point of the dataset
-// printf("\nthe mean virtual point is:\n ");
-// print_data(&mean,0);
-
-// distances = most_distant_k_point_(data,mean);
-// //int *kk;
-// max_in_array(distances, dict);
-// for(int i = 0; i <= n_points;i++)
+// for (int i = 0; i < rows; i++)
 // {
-//     printf("\nindex :%d    values%f\n",dict[i].index,dict[i].value);
+//     for (int j = 0; j < columns; j++)
+//     {
+//         *(a+ i*columns +j) = i+j;
+//     }    
+// }
+// printf("The array elements are:\n");
+// for (int i = 0; i < rows; i++) {
+//     for (int j = 0; j < columns; j++) {
+//         printf("%d ", *(a + i*columns + j));
+//     }
+//     printf("\n");
+// }
+// printf("\n");
+// for (int j = 0; j< rows; j++){
+//     printf("%d\n", *(a+j*columns) );
 // }
 
-// for(int i = 0; i <= n_points;i++)
-// {
-//     assign(&refined_data[i],data[dict[n_points-i].index]);
-// }
-// distances_second = most_distant_k_point_(data,refined_data[0]);
-// print_data(&refined_data[0],0);
-// print_data(&data[118],0);
-// for(int i = 0; i <= n_points;i++)
-// {
-//     printf("\n second distances%f\n",distances_second[i]);
-// }
+//COME STAMPARE LA PRIMA COLONNA COMPLETA
 
-// max_in_array(distances, second_dict);
-// for(int i = 0; i <= n_points;i++)
-// {
-//     printf("\nindex :%d    values%f\n",second_dict[i].index,second_dict[i].value);
-// }
-// float fff;
-// //second_refined_data
-// fff = euclidean_distance_(data[13],data[118]);
-// printf("%f",fff); //113 and 118 
+ printf("%d\n", *(cluster_matrix+ 0*value_of_k) ); //0
+// printf("%d\n", *(a+ 1*columns) ); //1
+// printf("%d\n", *(a+ 2*columns) ); //2
+// printf("%d\n", *(a+ 3*columns) ); //3
+// printf("\n");
+// printf("%d\n", *(a+ 0*columns +1) ); //1
+// printf("%d\n", *(a+ 1*columns +1) ); //2
+// printf("%d\n", *(a+ 2*columns +1) ); //3
+// printf("%d\n", *(a+ 3*columns +1) ); //4
 
-// distances_third = most_distant_k_point_(data,refined_data[0]);
+
+free(cluster_matrix);
 
 
 
 
-// for(int i = 0; i <= 7;i++)
-// {   float dis,tm;
-//     for(int j=1; j < 7;i++){
-//         dis = euclidean_distance_(data[dict[i].index], data[dict[j].index]);
-//         if(dis >= tm){
-//             tm = dis;
-//         }
-//     }     
 
-// }
-//second_distances = most_distant_k_point(data[dict[].index],)
-// if(max_in_array(distances, dict) != 1){
-//     printf("Error in max_in_array()");
-// }                       //need to make a struct for (float distances, int index) for reference on the dataset
-//printf("\n max distances from center \n index %d, and value %f",dict[9].index,dict[9].value);
 
-// printf(":\n ");
-// for(int i = 0; i <= 10;i++)
-// {
-//     printf("\n%d",kk[i]);
-// }
 
-// float dist, md;
 
-//dist = euclidean_distance(data,1,50);
-//print_data(data,3);
-// Point ass;
-// Point *cptr = &ass;
-// assign(cptr,data[1]) ;
-// printf("\nthis is assign ass:\n");
-// print_data(&ass,0);
 
-//md = most_distant_k_point(data);
-//int rd = Get_rand_element();
-// float *tt;
-// tt = most_distant_k_point(data,rd);
-// int kk;
-// kk = max_in_array(tt);
 
-// print_data(&mean,0);
-// printf("ecco il massimo indice%d",kk);
-// for(int i = 0; i <= 149;i++)
-// {
-//     printf("\n%f",tt[i]);
-// }
-// printf("Random point\n");
-// print_data(data,rd);
-//printf("\ndistance between data point 0 and 149 : %f",dist);
-//printf("\n\nmost distant %f",md);
+
+
 fclose(fp);
 return 0;
+
+free(p);
+free(data);
 }
 
