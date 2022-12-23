@@ -1,7 +1,7 @@
 
 #ifndef HEADER_FILE
 #define HEADER_FILE
-
+#include<string.h>
 struct point
 {
     float sep_l;
@@ -147,7 +147,9 @@ int return_index_dict (Dict *dict, float new_value, int array_len)
     //             return(dict[i].index);
     //         }
     //     }
-    // }    
+    // } 
+    return 0;   
+
 }
 
 
@@ -162,7 +164,7 @@ int return_position_dict (Dict dict[], int new_index, int array_len)
         }
     }
     // } else {
-        
+    return 0;
     // }
 }
 
@@ -190,11 +192,11 @@ float sort_array_with_dict (Dict dict[], int array_len, int position, char* type
 
         for (int j = i+1; j < array_len; j++)
         {
-            if (type_of_sort == "MAX") {
+            if (strcmp(type_of_sort,"MAX") == 0) {
                 if (indici[j] < indici[counter]) {
                     counter = j;
                 }
-            } else if (type_of_sort == "MIN") {
+            } else if (strcmp(type_of_sort,"MIN") == 0) {
                 if (indici[j] > indici[counter]) {
                     counter = j;
                 }
