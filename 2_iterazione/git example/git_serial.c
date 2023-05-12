@@ -8,7 +8,7 @@
 #include<errno.h>
 #include<string.h>
 
-#define MAX_ITERATIONS 1000
+#define MAX_ITERATIONS 50
 
 /* Definition of the constant */
 #define numOfElements 150
@@ -27,7 +27,6 @@ void assign2Cluster(double k_sepal_len[], double k_sepal_wid[], double k_petal_l
 	double min_dist = 10000000;
 	double sepal_len=0, sepal_wid=0, petal_len=0, petal_wid=0, temp_dist=0;
 	int k_min_index = 0;
-
 	for(int i = 0; i < (numOfElements) + 1; i++)
 	{
 		for(int j = 0; j < numOfClusters; j++)
@@ -47,7 +46,6 @@ void assign2Cluster(double k_sepal_len[], double k_sepal_wid[], double k_petal_l
 
 		// update the cluster assignment of this data points
 		assign[i] = k_min_index;
-        printf("Point #%d is assigned to Cluster #%d\n", i, k_min_index);
 	}
 }
 
@@ -94,7 +92,7 @@ void calcKmeans(double k_means_sepal_len[], double k_means_sepal_wid[], double k
 
 int main(int argc, char *argv[])
 {
-	// send buffers
+	// buffers
 	double *k_means_sepal_len = NULL;		// k means corresponding sepal length values
 	double *k_means_sepal_wid = NULL;		// k means corresponding sepal width values
     double *k_means_petal_len = NULL;		// k means corresponding petal length values
@@ -104,14 +102,6 @@ int main(int argc, char *argv[])
 	double *data_sepal_wid_points = NULL;
     double *data_petal_len_points = NULL;
 	double *data_petal_wid_points = NULL;
-
-	// receive buffer
-	double *recv_sepal_len = NULL;
-	double *recv_sepal_wid = NULL;
-    double *recv_petal_len = NULL;
-	double *recv_petal_wid = NULL;
-	int *recv_assign = NULL;
-
 	
     printf("The value of k is %d.\n", numOfClusters);
 
@@ -198,13 +188,14 @@ int main(int argc, char *argv[])
         printf("Initial K-means: (%f, %f, %f, %f)\n", k_means_sepal_len[i], k_means_sepal_wid[i], k_means_petal_len[i], k_means_petal_wid[i]);
     }
 
+    for (int run = 0; run < MAX_ITERATIONS; run++) {
+        assign2Cluster(k_means_sepal_len, k_means_sepal_wid, k_means_petal_len, k_means_petal_wid, data_sepal_len_points, data_sepal_wid_points, data_petal_len_points, data_petal_wid_points, k_assignment);
+	    calcKmeans(k_means_sepal_len, k_means_sepal_wid, k_means_petal_len, k_means_petal_wid, data_sepal_len_points, data_sepal_wid_points, data_petal_len_points, data_petal_wid_points, k_assignment);
+    }
 
     // assign the data points to a cluster
 	//assign2Cluster(k_means_sepal_len, k_means_sepal_wid, k_means_petal_len, k_means_petal_wid, recv_sepal_len, recv_sepal_wid, recv_petal_len, recv_petal_wid, recv_assign);
-	assign2Cluster(k_means_sepal_len, k_means_sepal_wid, k_means_petal_len, k_means_petal_wid, data_sepal_len_points, data_sepal_wid_points, data_petal_len_points, data_petal_wid_points, k_assignment);
-    
-	calcKmeans(k_means_sepal_len, k_means_sepal_wid, k_means_petal_len, k_means_petal_wid, data_sepal_len_points, data_sepal_wid_points, data_petal_len_points, data_petal_wid_points, k_assignment);
-
+	
     printf("--------------------------------------------------\n");
     printf("FINAL RESULTS:\n");
     for(int i = 0; i < numOfClusters; i++)
@@ -213,12 +204,33 @@ int main(int argc, char *argv[])
     }
     printf("--------------------------------------------------\n");
 
-    printf("FINAL CLUSTERS:\n");
-        for(int i = 0; i < numOfElements; i++)
-        {
-            printf("Point #%d is assigned to Cluster\n", k_assignment[i]);
+    //assign2Cluster(k_means_sepal_len, k_means_sepal_wid, k_means_petal_len, k_means_petal_wid, data_sepal_len_points, data_sepal_wid_points, data_petal_len_points, data_petal_wid_points, k_assignment);
+
+    printf("--------------------------------------------------\n");
+    printf("CLUSTERS:\n");
+    for(int i = 0; i < numOfElements; i++)
+    {
+        printf("Point #%d is assigned to Cluster #%d\n", i, k_assignment[i]);
+    }
+    printf("RESULTS:");
+    int zero = 0;
+    int first = 0;
+    int second = 0;
+    for(int i = 0; i<numOfElements; i++){
+        if(k_assignment[i] == 0){
+            zero++;
         }
-        printf("--------------------------------------------------\n");
+        if(k_assignment[i] == 1){
+            first++;
+        }
+        if(k_assignment[i] == 2){
+            second++;
+        }
+    } 
+    printf("\nPoints in cluster 0 are %d",zero);
+    printf("\nPoints in cluster 1 are %d",first);
+    printf("\nPoints in cluster 2 are %d",second);
+    printf("--------------------------------------------------\n");
 
     // deallocate memory and clean up
     free(k_means_sepal_len);
