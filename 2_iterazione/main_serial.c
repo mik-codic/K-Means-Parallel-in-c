@@ -120,5 +120,7 @@ int main() {
     }
     printf("cluster 0: %d, cluster 1: %d, cluster 2: %d",c,g,f);
 
+    printf("TEST:\n %f", dataset[1][1]);
+
     return 0;
 }
