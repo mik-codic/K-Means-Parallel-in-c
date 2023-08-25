@@ -5,7 +5,7 @@
 #include <float.h>
 #include <string.h>
 
-#define ROWS 30001
+#define ROWS 9730
 #define COLS 4
 #define K 3
 
@@ -14,7 +14,7 @@ int cluster[ROWS];
 double centroids[K][COLS];
 
 void read_dataset() {
-FILE* file = fopen("generated_data.csv","r");
+FILE* file = fopen("iris_noisy_2.csv","r");
     
     char buffer[130];
     int row = 0;
@@ -47,6 +47,7 @@ double euclidean_distance(int a, int b) {
 
 void kmeans() {
     int rank, size;
+    double t1, t2;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     int rd = 0;
@@ -66,6 +67,9 @@ void kmeans() {
     int iter = 10;
     int tt = 0;   
     int changed = 1;
+
+    t1 = MPI_Wtime();
+
     while (tt<iter) {
         printf("%d` iteration of the kmeans",tt);
         changed = 0;
@@ -152,12 +156,21 @@ void kmeans() {
         fclose(fi);   
         tt++;
     }
+    t2 = (MPI_Wtime()-t1) / iter;
+
+    printf("\nProcess %d takes %f seconds to complete the k-means algorithm.", rank, t2);
 }
 
 int main(int argc, char **argv) {
+    double time1, time2, mean_time;
+    int iter;
+    
     printf("\nbefore init");
 
     MPI_Init(&argc, &argv);
+
+    time1 = MPI_Wtime();
+
     printf("\nafter init");
 
     read_dataset();
@@ -166,27 +179,37 @@ int main(int argc, char **argv) {
     kmeans();
     printf("\nafter kmeans ");
 
+    time2 = MPI_Wtime()-time1;
 
+    mean_time = mean_time + time2;
+    iter++;
     MPI_Finalize();
-    int c = 0;
-    int g = 0;
-    int f = 0;
-    for (int i = 0; i < ROWS; i++) {
-        //printf("\nPoint: ");
-        for (int j = 0; j < COLS; j++) {
-        //    printf("%f ", dataset[i][j]);
-        }
-        //printf("Cluster: %d\n", cluster[i]);
-        if(cluster[i] == 0){
-            c++;
-        }
-        if(cluster[i] == 1){
-            g++;
-        }
-        if(cluster[i] == 2){
-            f++;
-        }
-    }
+
+    mean_time = mean_time / iter;
+
+    
+
+    printf("\nThe K-means algorithm took %f seconds", mean_time);
+
+    // int c = 0;
+    // int g = 0;
+    // int f = 0;
+    // for (int i = 0; i < ROWS; i++) {
+    //     //printf("\nPoint: ");
+    //     for (int j = 0; j < COLS; j++) {
+    //     //    printf("%f ", dataset[i][j]);
+    //     }
+    //     //printf("Cluster: %d\n", cluster[i]);
+    //     if(cluster[i] == 0){
+    //         c++;
+    //     }
+    //     if(cluster[i] == 1){
+    //         g++;
+    //     }
+    //     if(cluster[i] == 2){
+    //         f++;
+    //     }
+    // }
     
     //printf("\ncluster 0: %d, cluster 1: %d, cluster 2: %d\n",c,g,f);
 

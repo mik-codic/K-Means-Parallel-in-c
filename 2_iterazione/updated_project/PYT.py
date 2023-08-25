@@ -71,5 +71,5 @@ if __name__ == "__main__":
     #remove_first_column(input_csv_file, output_csv_file)
     print("First column removed and saved to output.csv")
     #lbl_to_int()
-    plotting("/Users/michelepresutto/Desktop/unity_repo/untitled folder/K-Means-Parallel-in-c/2_iterazione/generated_data.csv","centroids.csv")
+    plotting("/Users/edoardomaines/Desktop/UNI/HPC_Project/K-Means-Parallel-in-c/2_iterazione/updated_project/iris_noisy_2.csv","centroids.csv")
     #plotting("iris_noisy_4.csv","centroids.csv")

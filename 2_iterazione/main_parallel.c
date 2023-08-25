@@ -14,7 +14,7 @@ int cluster[ROWS];
 double centroids[K][COLS];
 
 void read_dataset() {
-FILE* file = fopen("iris.csv","r");
+    FILE* file = fopen("iris.csv","r");
     
     char buffer[80];
     int row = 0;
@@ -35,7 +35,8 @@ FILE* file = fopen("iris.csv","r");
         }
         row++;
     }
-    fclose(file);}
+    fclose(file);
+}
 
 double euclidean_distance(double *a, double *b) {
     double sum = 0;
@@ -87,8 +88,7 @@ void kmeans() {
 
         // Gather cluster assignments from all processes
         int global_changed;
-        MPI_Allreduce(&changed, &global_changed, 1, MPI_INT, MPI_LOR,
-                      MPI_COMM_WORLD);
+        MPI_Allreduce(&changed, &global_changed, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
         changed = global_changed;
 
         // Recompute centroids
@@ -101,31 +101,31 @@ void kmeans() {
                   local_sum[cluster[i]][j]+=dataset[i][j];
               }
               local_count[cluster[i]]++;
-          }
+            }
 
-          double global_sum[K][COLS]={{0}};
-          int global_count[K]={0};
+            double global_sum[K][COLS]={{0}};
+            int global_count[K]={0};
 
-          MPI_Allreduce(local_sum,
-                        global_sum,
-                        K*COLS,
-                        MPI_DOUBLE,
-                        MPI_SUM,
-                        MPI_COMM_WORLD);
+            MPI_Allreduce(local_sum,
+                            global_sum,
+                            K*COLS,
+                            MPI_DOUBLE,
+                            MPI_SUM,
+                            MPI_COMM_WORLD);
 
-          
-          MPI_Allreduce(local_count,
-                        global_count,
-                        K,
-                        MPI_INT,
-                        MPI_SUM,
-                        MPI_COMM_WORLD);
+            
+            MPI_Allreduce(local_count,
+                            global_count,
+                            K,
+                            MPI_INT,
+                            MPI_SUM,
+                            MPI_COMM_WORLD);
 
-          for (int i = 0; i < K; i++) {
-              for (int j = 0; j < COLS; j++) {
-                  centroids[i][j] = global_sum[i][j] / global_count[i];
-              }
-          }
+            for (int i = 0; i < K; i++) {
+                for (int j = 0; j < COLS; j++) {
+                    centroids[i][j] = global_sum[i][j] / global_count[i];
+                }
+            }
         }
     }
 }

@@ -4,7 +4,7 @@
 #include <float.h>
 #include <string.h>
 
-#define ROWS 30000
+#define ROWS 9730
 #define COLS 4
 #define K 3
 
@@ -16,9 +16,9 @@ double centroids[K][COLS];
 
 void read_db(){    
     printf("start of read_db function");
-    FILE* file = fopen("/Users/michelepresutto/Desktop/unity_repo/untitled folder/K-Means-Parallel-in-c/2_iterazione/generated_data.csv","r");
+    FILE* file = fopen("/Users/edoardomaines/Desktop/UNI/HPC_Project/K-Means-Parallel-in-c/2_iterazione/updated_project/iris_noisy_2.csv","r");
     if(file == NULL){
-        printf("fuck it don't work");
+        printf("\nfuck it doesn't work");
         exit(-1);
     }
     
@@ -129,7 +129,7 @@ void kmeans() {
     // Open the file for writing
     FILE *fi = fopen("centroids.csv", "w");
     if (fi == NULL) {
-        printf("Failed to open the file for writing.");
+        printf("\nFailed to open the file for writing.");
         
     }
 
@@ -153,7 +153,7 @@ void kmeans() {
 void test_using_labels(){
     FILE* file = fopen("/Users/michelepresutto/Desktop/unity_repo/untitled folder/K-Means-Parallel-in-c/2_iterazione/generated_labels.csv","r");
     if(file == NULL){
-        printf("fuck it don't work");
+        printf("\nfuck it doesn't work");
         exit(-1);
     }
     
@@ -180,7 +180,7 @@ void test_using_labels(){
     // Open the file for writing
     FILE *fil = fopen("output.csv", "w");
     if (fil == NULL) {
-        printf("Failed to open the file for writing.");
+        printf("\nFailed to open the file for writing.");
         
     }
 
@@ -201,8 +201,8 @@ void test_using_labels(){
 int main() {
     printf("debug start main");
     read_db();
-    printf("debug after reading db");
-    printf("data %2f",dataset[0][0]);
+    printf("\ndebug after reading db");
+    printf("\ndata %2f",dataset[0][0]);
     kmeans();
 
     int c = 0;
@@ -226,7 +226,7 @@ int main() {
 
     }
     //printf("cluster 0: %d, cluster 1: %d, cluster 2: %d",c,g,f);
-    test_using_labels();
+    //test_using_labels();
 
     return 0;
 }
