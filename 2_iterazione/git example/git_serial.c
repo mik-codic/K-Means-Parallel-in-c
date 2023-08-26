@@ -228,10 +228,10 @@ int main(int argc, char *argv[])
         selected_points[i] = find_best_point(data_, n_points, selected_points, i);
     }
     for(int i= 0;i<3;i++){
-        printf("\nlist of index of the 3 most distanced point %d",collection_of_index[i]);
+        printf("\nlist of index of the 3 most distanced point %d\n",collection_of_index[i]);
     }
     // Print the n points that maximize the sum of the distances between them
-    printf("The %d points that maximize the sum of the distances between them are:\n", n);
+    printf("\nThe %d points that maximize the sum of the distances between them are:\n", n);
     for (int i = 0; i < n; i++) {
         printf("(%f, %f, %f, %f)\n", selected_points[i].x,
                selected_points[i].y,
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
         k_means_petal_len[i] = data_petal_len_points[collection_init_index[i]];
         k_means_petal_wid[i] = data_petal_wid_points[collection_init_index[i]];
     }
-
+    printf("\n--------------------------------------------------\n");
     printf("Running k-means algorithm for %d iterations...\n\n", MAX_ITERATIONS);
     for(int i = 0; i < numOfClusters; i++)
     {
@@ -280,7 +280,6 @@ int main(int argc, char *argv[])
 
     //assign2Cluster(k_means_sepal_len, k_means_sepal_wid, k_means_petal_len, k_means_petal_wid, data_sepal_len_points, data_sepal_wid_points, data_petal_len_points, data_petal_wid_points, k_assignment);
 
-    printf("--------------------------------------------------\n");
     // printf("CLUSTERS:\n");
     // for(int i = 0; i < numOfElements; i++)
     // {
@@ -304,7 +303,7 @@ int main(int argc, char *argv[])
     printf("\nPoints in cluster 0 are %d",zero);
     printf("\nPoints in cluster 1 are %d",first);
     printf("\nPoints in cluster 2 are %d",second);
-    printf("--------------------------------------------------\n");
+    printf("\n--------------------------------------------------\n");
 
     // deallocate memory and clean up
     free(k_means_sepal_len);
