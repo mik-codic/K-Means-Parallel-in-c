@@ -13,9 +13,46 @@ double dataset[ROWS][COLS];
 int cluster[ROWS];
 double centroids[K][COLS];
 
-void read_dataset() {
-FILE* file = fopen("iris_noisy_2.csv","r");
-    
+void salvaTempisticheCSV(const char *nomeFile, int numeroDati, double ioTime, double kmeansTime, double totTime) {
+    FILE *file = fopen(nomeFile, "a");
+    if (file == NULL) {
+        printf("Impossible to open the file %s.\n", nomeFile);
+        return;
+    }
+    //fprintf(file, "#Data,I/O Time,Kmeans Time,Total Time\n");
+    fprintf(file, "%d,%.6lf,%.6lf,%.6lf\n", numeroDati, ioTime, kmeansTime, totTime);
+    fclose(file);
+}
+
+void eliminaContenutoCSV(const char *nomeFile) {
+
+    FILE *file = fopen(nomeFile, "r");
+    if (file == NULL) {
+        printf("Impossibile aprire il file %s.\n", nomeFile);
+        return;
+    }
+
+    char primaRiga[1024];
+    if (fgets(primaRiga, sizeof(primaRiga), file) == NULL) {
+        printf("Errore nella lettura della prima riga.\n");
+        fclose(file);
+        return;
+    }
+    fclose(file);
+
+    file = fopen(nomeFile, "w");
+    if (file == NULL) {
+        printf("Impossibile aprire il file %s in modalità di sovrascrittura.\n", nomeFile);
+        return;
+    }
+
+    fprintf(file, "%s", primaRiga);
+    fclose(file);
+}
+
+void read_dataset(float percentage) {
+    FILE* file = fopen("iris_noisy_2.csv","r");
+    int partial_nr_ROWS = (int)(ROWS * percentage);
     char buffer[130];
     int row = 0;
     while (fgets(buffer, 130, file)) {
@@ -27,16 +64,19 @@ FILE* file = fopen("iris_noisy_2.csv","r");
             
             // Just printing each integer here but handle as needed
             float n = atof(token);
-            // printf("%f\n", n);
             
             dataset[row][col] = n;
             token = strtok(NULL, ",");
             col++;          
         }
+        if (row == partial_nr_ROWS) {
+            break;
+        }
         row++;
     }
     fclose(file);
-    }
+}
+
 
 double euclidean_distance(int a, int b) {
     double sum = 0;
@@ -45,12 +85,11 @@ double euclidean_distance(int a, int b) {
     }
     return sqrt(sum);}
 
-void kmeans() {
-    int rank, size;
+void kmeans(int rank, int size) {
+    
     double t1, t2;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
     int rd = 0;
+
     // Initialize centroids randomly
     if (rank == 0) {
         
@@ -66,13 +105,13 @@ void kmeans() {
     MPI_Bcast(centroids, K*COLS, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     int iter = 10;
     int tt = 0;   
-    int changed = 1;
+    //int changed = 1;
 
     t1 = MPI_Wtime();
 
     while (tt<iter) {
-        printf("%d` iteration of the kmeans",tt);
-        changed = 0;
+        //printf("%d` iteration of the kmeans",tt);
+        
 
         // Assign points to closest centroid
         int start = rank * ROWS / size;
@@ -90,15 +129,15 @@ void kmeans() {
 
             if (cluster[i] != min_index) {
                 cluster[i] = min_index;
-                changed = 1;
+                
             }
         }
 
         // Gather cluster assignments from all processes
-        int global_changed;
-        MPI_Allreduce(&changed, &global_changed, 1, MPI_INT, MPI_LOR,
-                      MPI_COMM_WORLD);
-        changed = global_changed;
+        // int global_changed;
+        // MPI_Allreduce(&changed, &global_changed, 1, MPI_INT, MPI_LOR,
+        //               MPI_COMM_WORLD);
+        // changed = global_changed;
 
         // Recompute centroids
         
@@ -152,7 +191,7 @@ void kmeans() {
 
         }
 
-            // Close the file
+        // Close the file
         fclose(fi);   
         tt++;
     }
@@ -162,58 +201,67 @@ void kmeans() {
 }
 
 int main(int argc, char **argv) {
-    double time1, time2, mean_time;
-    int iter;
+    double time1, time2, time3;
+    double reading_time, kmean_time, total_time;
+    double max_reading, max_kmeans, max_total;
+    int rank, size;
     
-    printf("\nbefore init");
+    const char *nomeFile = "Time Results MPI.csv";
+    eliminaContenutoCSV(nomeFile);
+
 
     MPI_Init(&argc, &argv);
 
-    time1 = MPI_Wtime();
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    printf("\nafter init");
+    for (float i = 0.10; i < 1.1; i+=0.10){   
+        int partial_nr_ROWS = (int)(ROWS * i);
 
-    read_dataset();
-    printf("\nafter read data");
+        time1 = MPI_Wtime();
 
-    kmeans();
-    printf("\nafter kmeans ");
+        read_dataset(i);
 
-    time2 = MPI_Wtime()-time1;
+        time2 = MPI_Wtime();
 
-    mean_time = mean_time + time2;
-    iter++;
+        kmeans(rank, size);
+        
+        time3 = MPI_Wtime();
+
+        reading_time = time2 - time1;
+        kmean_time = time3 - time2;
+        total_time = time3 - time1;
+
+        // Using MPI_Reduce in order to calculate il max time for each phase
+        MPI_Reduce( &reading_time,
+                    &max_reading,
+                    1,
+                    MPI_DOUBLE,
+                    MPI_MAX,
+                    0,
+                    MPI_COMM_WORLD);
+        MPI_Reduce( &kmean_time,
+                    &max_kmeans,
+                    1,
+                    MPI_DOUBLE,
+                    MPI_MAX,
+                    0,
+                    MPI_COMM_WORLD);
+        MPI_Reduce( &total_time,
+                    &max_total,
+                    1,
+                    MPI_DOUBLE,
+                    MPI_MAX,
+                    0,
+                    MPI_COMM_WORLD);
+        if (rank==0){
+            printf("\n---------- PERCENTAGE OF DATABASE: %f ----------\n", i);
+            printf("\nI/O time (s): %f", max_reading);
+            printf("\nK-means algorithm time (s): %f", max_kmeans);
+            printf("\nTotal time (s): %f", max_total);
+            salvaTempisticheCSV(nomeFile, partial_nr_ROWS, max_reading, max_kmeans, max_total);
+        }
+    }
     MPI_Finalize();
-
-    mean_time = mean_time / iter;
-
-    
-
-    printf("\nThe K-means algorithm took %f seconds", mean_time);
-
-    // int c = 0;
-    // int g = 0;
-    // int f = 0;
-    // for (int i = 0; i < ROWS; i++) {
-    //     //printf("\nPoint: ");
-    //     for (int j = 0; j < COLS; j++) {
-    //     //    printf("%f ", dataset[i][j]);
-    //     }
-    //     //printf("Cluster: %d\n", cluster[i]);
-    //     if(cluster[i] == 0){
-    //         c++;
-    //     }
-    //     if(cluster[i] == 1){
-    //         g++;
-    //     }
-    //     if(cluster[i] == 2){
-    //         f++;
-    //     }
-    // }
-    
-    //printf("\ncluster 0: %d, cluster 1: %d, cluster 2: %d\n",c,g,f);
-
-    //printf("\nfinalized ");
-
     return 0;
 }

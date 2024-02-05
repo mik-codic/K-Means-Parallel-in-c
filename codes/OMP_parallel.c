@@ -13,9 +13,47 @@ double dataset[ROWS][COLS];
 int cluster[ROWS];
 double centroids[K][COLS];
 
-void read_dataset() {
-FILE* file = fopen("iris_noisy_2.csv","r");
-    
+void salvaTempisticheCSV(const char *nomeFile, int numeroDati, double ioTime, double kmeansTime, double totTime) {
+    FILE *file = fopen(nomeFile, "a");
+    if (file == NULL) {
+        printf("Impossible to open the file %s.\n", nomeFile);
+        return;
+    }
+    //fprintf(file, "#Data,I/O Time,Kmeans Time,Total Time\n");
+    fprintf(file, "%d,%.6lf,%.6lf,%.6lf\n", numeroDati, ioTime, kmeansTime, totTime);
+    fclose(file);
+}
+
+void eliminaContenutoCSV(const char *nomeFile) {
+
+    FILE *file = fopen(nomeFile, "r");
+    if (file == NULL) {
+        printf("Impossibile aprire il file %s.\n", nomeFile);
+        return;
+    }
+
+    char primaRiga[1024];
+    if (fgets(primaRiga, sizeof(primaRiga), file) == NULL) {
+        printf("Errore nella lettura della prima riga.\n");
+        fclose(file);
+        return;
+    }
+    fclose(file);
+
+    file = fopen(nomeFile, "w");
+    if (file == NULL) {
+        printf("Impossibile aprire il file %s in modalità di sovrascrittura.\n", nomeFile);
+        return;
+    }
+
+    fprintf(file, "%s", primaRiga);
+    fclose(file);
+}
+
+
+void read_dataset(float percentage) {
+    FILE* file = fopen("iris_noisy_2.csv","r");
+    int partial_nr_ROWS = (int)(ROWS * percentage);
     char buffer[130];
     int row = 0;
     while (fgets(buffer, 130, file)) {
@@ -27,11 +65,13 @@ FILE* file = fopen("iris_noisy_2.csv","r");
             
             // Just printing each integer here but handle as needed
             float n = atof(token);
-            // printf("%f\n", n);
             
             dataset[row][col] = n;
             token = strtok(NULL, ",");
             col++;          
+        }
+        if (row == partial_nr_ROWS) {
+            break;
         }
         row++;
     }
@@ -165,50 +205,63 @@ void kmeans() {
 int main(int argc, char **argv) {
     double t1, t2, t3;
     double reading_time, kmean_time, total_time;
+    int nr;
+
+    const char *nomeFile = "Time Results OMP.csv";
+    eliminaContenutoCSV(nomeFile);
+
+    omp_set_dynamic(0);
     omp_set_num_threads(4);
     //int iter;
-    t1 = omp_get_wtime();
 
-    read_dataset();
+    for (float i = 0.10; i < 1.1; i+=0.10){
+        int partial_nr_ROWS = (int)(ROWS * i);
+        t1 = omp_get_wtime();
 
-    t2 = omp_get_wtime();
+        read_dataset(i);
 
-    kmeans();
+        t2 = omp_get_wtime();
 
-    t3 = omp_get_wtime();
+        kmeans();
 
-    reading_time = t2 - t1;
-    kmean_time = t3 - t2;
-    total_time = t3 - t1;
+        t3 = omp_get_wtime();
 
-    printf("\nThe I/O PHASE took %f seconds\n", reading_time);
-    printf("\nThe K-MEANS ALGORITHM took %f seconds\n", kmean_time);
-    printf("\nThe COMPLETE ALGORITHM took %f seconds\n", total_time);
+        reading_time = t2 - t1;
+        kmean_time = t3 - t2;
+        total_time = t3 - t1;
+
+        nr = omp_get_num_threads();
+        printf("\nNumber of threads: %d \n", nr);
+        printf("\nThe I/O PHASE took %f seconds\n", reading_time);
+        printf("\nThe K-MEANS ALGORITHM took %f seconds\n", kmean_time);
+        printf("\nThe COMPLETE ALGORITHM took %f seconds\n", total_time);
+        salvaTempisticheCSV(nomeFile, partial_nr_ROWS, reading_time, kmean_time, total_time);
+    }
 
     printf("\n\n\n-------------------PRINTING ALL POINTS AND THEIR ASSIGNED CLUSTER-------------------\n\n\n");
 
 
     // Let's see how the clusters are populated!
-    int c = 0;
-    int g = 0;
-    int f = 0;
-    for (int i = 0; i < ROWS; i++) {
-        printf("Point: ");
-        for (int j = 0; j < COLS; j++) {
-            printf("%f ", dataset[i][j]);
-        }
-        printf("Cluster: %d\n", cluster[i]);
-        if(cluster[i] == 0){
-            c++;
-        }
-        if(cluster[i] == 1){
-            g++;
-        }
-        if(cluster[i] == 2){
-            f++;
-        }
+    // int c = 0;
+    // int g = 0;
+    // int f = 0;
+    // for (int i = 0; i < ROWS; i++) {
+    //     printf("Point: ");
+    //     for (int j = 0; j < COLS; j++) {
+    //         printf("%f ", dataset[i][j]);
+    //     }
+    //     printf("Cluster: %d\n", cluster[i]);
+    //     if(cluster[i] == 0){
+    //         c++;
+    //     }
+    //     if(cluster[i] == 1){
+    //         g++;
+    //     }
+    //     if(cluster[i] == 2){
+    //         f++;
+    //     }
 
-    }
-    printf("cluster 0: %d, cluster 1: %d, cluster 2: %d",c,g,f);
+    // }
+    //printf("cluster 0: %d, cluster 1: %d, cluster 2: %d",c,g,f);
     return 0;
 }
