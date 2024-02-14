@@ -13,14 +13,14 @@ double dataset[ROWS][COLS];
 int cluster[ROWS];
 double centroids[K][COLS];
 
-void salvaTempisticheCSV(const char *nomeFile, int numeroDati, double ioTime, double kmeansTime, double totTime) {
+void salvaTempisticheCSV(const char *nomeFile, int numeroDati, double ioTime, double kmeansTime, double totTime, double avgIterTime) {
     FILE *file = fopen(nomeFile, "a");
     if (file == NULL) {
         printf("Impossible to open the file %s.\n", nomeFile);
         return;
     }
     //fprintf(file, "#Data,I/O Time,Kmeans Time,Total Time\n");
-    fprintf(file, "%d,%.6lf,%.6lf,%.6lf\n", numeroDati, ioTime, kmeansTime, totTime);
+    fprintf(file, "%d, %.6lf, %.6lf, %.6lf, %.6lf \n", numeroDati, ioTime, kmeansTime, totTime, avgIterTime);
     fclose(file);
 }
 
@@ -28,7 +28,7 @@ void eliminaContenutoCSV(const char *nomeFile) {
 
     FILE *file = fopen(nomeFile, "r");
     if (file == NULL) {
-        printf("Impossibile aprire il file %s.\n", nomeFile);
+        printf("Impossible to open the file %s.\n", nomeFile);
         return;
     }
 
@@ -50,43 +50,81 @@ void eliminaContenutoCSV(const char *nomeFile) {
     fclose(file);
 }
 
-
 void read_dataset(float percentage) {
     FILE* file = fopen("iris_noisy_2.csv","r");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file.\n");
+        exit(1);
+    }
+
     int partial_nr_ROWS = (int)(ROWS * percentage);
     char buffer[130];
     int row = 0;
-    while (fgets(buffer, 130, file)) {
-        
-        // get all the values in a row
-        char *token = strtok(buffer, ",");
-        int col = 0;
-        while (token) {
-            
-            // Just printing each integer here but handle as needed
-            float n = atof(token);
-            
-            dataset[row][col] = n;
-            token = strtok(NULL, ",");
-            col++;          
+    int count = 0;
+
+    // Leggiamo e processiamo le righe del file in modo parallelo con OpenMP
+    #pragma omp parallel default(none) shared(file, partial_nr_ROWS, count, dataset) private(buffer, row)
+    {
+        int tid = omp_get_thread_num();
+        int num_threads = omp_get_num_threads();
+
+        // Calcoliamo quale riga deve essere letta da questo thread
+        int start_row = tid * partial_nr_ROWS / num_threads;
+        int end_row = (tid + 1) * partial_nr_ROWS / num_threads;
+
+        // Spostiamo la posizione del file per ogni thread
+        for (int i = 0; i < start_row; i++) {
+            if (fgets(buffer, 130, file) == NULL) {
+                break;
+            }
         }
-        if (row == partial_nr_ROWS) {
-            break;
+
+        // Leggiamo il file e memorizziamo i dati
+        for (row = start_row; row < end_row; row++) {
+            if (fgets(buffer, 130, file) == NULL) {
+                break;
+            }
+            char *token = strtok(buffer, ",");
+            int col = 0;
+            while (token) {
+                float n = atof(token);
+                dataset[row][col] = n;
+                token = strtok(NULL, ",");
+                col++;
+            }
+            #pragma omp atomic
+            count++;
         }
-        row++;
     }
+
     fclose(file);
 }
 
-double euclidean_distance(double *a, double *b) {
+// double euclidean_distance(double *a, double *b) {
+//     double sum = 0;
+//     for (int i = 0; i < COLS; i++) {
+//         sum += pow(a[i] - b[i], 2);
+//     }
+//     return sqrt(sum);
+// }
+
+double euclidean_distance(int a, int b) {
     double sum = 0;
     for (int i = 0; i < COLS; i++) {
-        sum += pow(a[i] - b[i], 2);
+        sum += pow(dataset[a][i] - centroids[b][i], 2);
+        if (b == 3) {
+            printf("\n%f\n", sum);
+        }
+        //printf(" %f ", centroids[3][i]);
+        //printf("\n");
+    }
+    if (sum < 0) {
+        printf("CIAO ERRORE!!!!");
     }
     return sqrt(sum);
 }
 
-void kmeans() {
+void kmeans(double *sum_iter_kmeans_time) {
 
     // Initialize centroids randomly
     for (int i = 0; i < K; i++) {
@@ -118,9 +156,11 @@ void kmeans() {
         #pragma omp for schedule(static, ROWS/omp_get_num_threads()) 
         for (int i = 0; i < ROWS; i++) {
             double min_distance = DBL_MAX;
-            int min_index = -1;
+            int min_index = 0;
+            
             for (int j = 0; j < K; j++) {
-                double distance = euclidean_distance(dataset[i], centroids[j]);
+                //double distance = euclidean_distance(dataset[i], centroids[j]);
+                double distance = euclidean_distance(i, j);
                 if (distance < min_distance) {
                     min_distance = distance;
                     min_index = j;
@@ -169,11 +209,9 @@ void kmeans() {
         }
         tt++;
         time2 = (omp_get_wtime() - time1) / iter;
-        
+        *sum_iter_kmeans_time += time2;
         // Get the id of the thread (used only to indentify the thread that takes more time)
         tid = omp_get_thread_num();
-
-        printf("\nA single thread (nr: %d) takes %f seconds to complete the k-means algorithm.", tid, time2);
 
         // Calculate the max time
         #pragma omp single
@@ -181,9 +219,7 @@ void kmeans() {
             max_t = time2;
             id_max = tid;
         }
-    }
-    printf("\n\n[MAX] A single thread (nr: %d) takes %f seconds to complete the k-means algorithm.\n", id_max, max_t);
- 
+    } 
     // Write the final centroids to a file
     FILE *fi = fopen("centroids.csv", "w");
     if (fi == NULL) {
@@ -192,7 +228,7 @@ void kmeans() {
 
     // Write the list elements to the file
     for(int i = 0;i<K;i++){
-        for(int j = 0;j<=3;j++){
+        for(int j = 0;j<COLS;j++){
             fprintf(fi," %f, ",centroids[i][j]);
         }
         fprintf(fi,"\n");
@@ -205,63 +241,76 @@ void kmeans() {
 int main(int argc, char **argv) {
     double t1, t2, t3;
     double reading_time, kmean_time, total_time;
-    int nr;
+    printf("CIAOOOO1");
+    // double max_reading = 0;
+    // double max_kmeans = 0;
+    // double max_total = 0;
+
+    double sum_iter_kmeans_time;
+    double avg_iter_kmeans_time;
+
+    int num_threads;
 
     const char *nomeFile = "Time Results OMP.csv";
     eliminaContenutoCSV(nomeFile);
 
-    omp_set_dynamic(0);
+    //omp_set_dynamic(0);
     omp_set_num_threads(4);
-    //int iter;
+    //int iter; 
+    
 
-    for (float i = 0.10; i < 1.1; i+=0.10){
-        int partial_nr_ROWS = (int)(ROWS * i);
+    #pragma omp parallel private(t1, t2, t3)
+    for (int i = 10; i < 11; i++){
+        float x = 0.10*i;
+        int partial_nr_ROWS = (int)(ROWS * x);
+
+        num_threads = omp_get_num_threads();
+
         t1 = omp_get_wtime();
-
-        read_dataset(i);
+        printf("CIAOOOO1");
+        read_dataset(x);
 
         t2 = omp_get_wtime();
-
-        kmeans();
+        printf("CIAOOOO2");
+        kmeans(&sum_iter_kmeans_time);
 
         t3 = omp_get_wtime();
 
+        #pragma omp barrier
         reading_time = t2 - t1;
         kmean_time = t3 - t2;
         total_time = t3 - t1;
 
-        nr = omp_get_num_threads();
-        printf("\nNumber of threads: %d \n", nr);
-        printf("\nThe I/O PHASE took %f seconds\n", reading_time);
-        printf("\nThe K-MEANS ALGORITHM took %f seconds\n", kmean_time);
+        
+        // // Getting higher time from each threads:
+        // // I/O Time
+        
+        // if(reading_time > max_reading){
+        //     max_reading = reading_time;
+        // }
+        // // Kmeans Time
+        
+        // if(kmean_time > max_kmeans){
+        //     max_kmeans = kmean_time;
+        // }
+        // // Total Time
+       
+        // if(total_time > max_total){
+        //     max_total = total_time;
+        // }
+        // AVG Iter Kmeans Time
+        
+        avg_iter_kmeans_time = sum_iter_kmeans_time / num_threads;
+
+        #pragma omp single 
+        {
+        printf("\n---------- PERCENTAGE OF DATABASE: %f ----------\n", x);
+        printf("\nNumber of threads: %d", num_threads);
+        printf("\nThe I/O PHASE took %f seconds", reading_time);
+        printf("\nThe K-MEANS ALGORITHM took %f seconds", kmean_time);
         printf("\nThe COMPLETE ALGORITHM took %f seconds\n", total_time);
-        salvaTempisticheCSV(nomeFile, partial_nr_ROWS, reading_time, kmean_time, total_time);
+        salvaTempisticheCSV(nomeFile, partial_nr_ROWS, reading_time, kmean_time, total_time, avg_iter_kmeans_time);
+        }    
     }
-
-    printf("\n\n\n-------------------PRINTING ALL POINTS AND THEIR ASSIGNED CLUSTER-------------------\n\n\n");
-
-
-    // Let's see how the clusters are populated!
-    // int c = 0;
-    // int g = 0;
-    // int f = 0;
-    // for (int i = 0; i < ROWS; i++) {
-    //     printf("Point: ");
-    //     for (int j = 0; j < COLS; j++) {
-    //         printf("%f ", dataset[i][j]);
-    //     }
-    //     printf("Cluster: %d\n", cluster[i]);
-    //     if(cluster[i] == 0){
-    //         c++;
-    //     }
-    //     if(cluster[i] == 1){
-    //         g++;
-    //     }
-    //     if(cluster[i] == 2){
-    //         f++;
-    //     }
-
-    // }
-    //printf("cluster 0: %d, cluster 1: %d, cluster 2: %d",c,g,f);
     return 0;
 }
